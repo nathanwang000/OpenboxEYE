@@ -28,8 +28,11 @@ def to_np(x):
     return x.data.cpu().numpy()
 
 def to_var(x, *args, **kwargs):
-    x = to_cuda(x)
-    return Variable(x, *args, **kwargs)
+    if type(x) is list or type(x) is tuple:
+        x = [Variable(to_cuda(x_), *args, **kwargs) for x_ in x]
+    else:
+        x = Variable(to_cuda(x), *args, **kwargs)
+    return x
 
 def np2tensor(x, y):
     return torch.from_numpy(x).float(), torch.from_numpy(y).long()
@@ -54,23 +57,27 @@ def get_y_yhat(model, data):
     for x, y in data:
         ys.append(y.numpy())
         x, y = to_var(x), to_var(y)
-        yhat.append(model(x).data.numpy())
+        yhat.append(nn.Softmax(dim=1)(model(x)).data.numpy())
 
     return np.hstack(ys), np.vstack(yhat)
 
 def model_auc(model, data):
+    model.eval()
     # note that this is for 2 classes, for 1 output, use report auc instead
     yhat = []
     ys = []
     for x, y in data:
         ys.append(y.numpy())
         x, y = to_var(x), to_var(y)
-        yhat.append(to_np(model.forward(x)))
+        yhat.append(to_np(nn.Softmax(dim=1)(model.forward(x))))
 
     y, yhat = np.hstack(ys), np.vstack(yhat)[:,1]
-    return roc_auc_score(y, yhat)    
+    res = roc_auc_score(y, yhat)
+    model.train()
+    return res
 
 def model_acc(model, data):
+    model.eval()    
     yhat = []
     ys = []
     for x, y in data:
@@ -79,18 +86,26 @@ def model_acc(model, data):
         yhat.append(np.argmax(to_np(model(x)), 1))
     y, yhat = np.hstack(ys), np.vstack(yhat)
 
-    return accuracy_score(y, yhat)
+    res = accuracy_score(y, yhat)
+    model.train()
+    return res 
 
 def calc_loss(model, data, loss):
+    from lib.openbox import open_box_batch    
+    model.eval()
     cost = 0
     denom = 0
     for x, y in data:
         x, y = to_var(x), to_var(y)
-        regret = loss(model(x), y).data[0]
+        W, b, C = open_box_batch(model, x)        
+        regret = loss(model(x), y, W).data.item()
         m = x.size(0)
         cost += regret * m
         denom += m
-    return cost / denom
+
+    res = cost / denom
+    model.train()
+    return res
 
 def calcAP(ytrue, ypred):
     return average_precision_score(ytrue, np.abs(ypred))
@@ -293,6 +308,7 @@ def reportAuc(model, data):
     return roc_auc_score(y, yhat)    
 
 def reportAcc(model, test_data):
+    print('this assumes uses log_softmax...............')
     accuracy = 0
     for k, (x, y) in enumerate(test_data):
         x, y = to_var(x).float(), to_var(y).float()
@@ -426,3 +442,30 @@ def loadData(dataname, get_test=False,
     return train_data, val_data,\
         Theta, val_theta,\
         ndim, n_islands
+
+# ---------------- for Openbox EYE ----------------
+def modelAP(model, data, risk):
+    from lib.openbox import open_box_batch        
+    model.eval()
+    res = 0
+    total = 0
+    for x, y in data:
+        Ws, bs, Cs = open_box_batch(model, x)
+        for i in range(len(y)):          
+            res += calcAP(risk, np.abs((Ws[i][1] - Ws[i][0]).data.numpy()))
+            total += 1
+    model.train()
+    return res / total
+
+def modelSparsity(model, data):
+    from lib.openbox import open_box_batch        
+    model.eval()
+    res = 0
+    total = 0
+    for x, y in data:
+        Ws, bs, Cs = open_box_batch(model, x)
+        for i in range(len(y)):          
+            res += sparsity((Ws[i][1] - Ws[i][0]).data.numpy())
+            total += 1
+    model.train()
+    return res / total
