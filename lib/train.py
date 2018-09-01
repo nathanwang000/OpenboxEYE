@@ -100,11 +100,13 @@ class Trainer(object):
                                                                      data)))
                     if valdata is not None:
                         vallosses.append(calc_loss(self.model, valdata, self.loss))
+                        np.save('models/%s.valloss' % self.name, vallosses)   
                         to_print += " %.4f" % model_auc(self.model, valdata)
                         
                     print(to_print)
                     torch.save(self.model, 'models/%s.pt' % self.name)
                     np.save('models/%s.loss' % self.name, losses)
+
                     cost = 0
         return losses, vallosses
 

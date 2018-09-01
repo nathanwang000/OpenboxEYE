@@ -14,3 +14,7 @@
 #+SELECT_TAGS: export
 
 use openbox and EYE to correct NN bias
+
+model archetectures tried
+
+0: MLP([d, 8, n_output]) 

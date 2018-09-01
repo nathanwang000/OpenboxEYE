@@ -46,7 +46,7 @@ def trainData(name, data, regularization=eye_loss, alpha=0.01, n_epochs=300,
     valdata = DataLoader(valdata, batch_size=4000, shuffle=True)
 
     n_output = 2 # binary classification task
-    model = MLP([d, n_output]) 
+    model = MLP([d, 8, n_output]) 
 
     t = Trainer(model, lr=learning_rate, risk_factors=m.r, alpha=alpha,
                 regularization=regularization,
@@ -81,7 +81,10 @@ class ParamSearch:
         # n_, d_, r_, a_ = self.tasks[0]
         # trainData(n_, d_, r_, 0.01)
         # print('done training')
-        map_parallel(trainData, self.tasks, self.n_cpus)
+
+        #map_parallel(trainData, self.tasks, self.n_cpus)        
+        for task in self.tasks:
+            trainData(*task)
         
         # select a model to run: split on auc and sparsity
         aucs = []
