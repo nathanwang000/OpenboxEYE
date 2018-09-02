@@ -58,6 +58,17 @@ Furthermore, note that AP is just an approximation of credibility, to really
 measure the effect, we still need synthetic data (multiple convex groups, with
 each group sharing a line) and symKL.
 
+regular Ridge (on weight not on explanation) result
+#+BEGIN_EXAMPLE
+  method name   alpha       auc        ap  min(rec, prec)  sparsity
+2       ridge    0.01  0.808660  0.182826        0.386792  0.055379
+3       ridge     0.1  0.806889  0.171857        0.449541  0.064763
+1       ridge   0.001  0.795532  0.156062        0.405660  0.042789
+5      ridge*     0.1  0.787106  0.174303        0.408451  0.061305
+4       ridge   1e-05  0.781287  0.137284        0.413462  0.044743
+0       ridge  0.0001  0.774291  0.162868        0.394231  0.044774
+#+END_EXAMPLE
+
 1: MLP([d, n_output]) # should be the same as LR
 
 2: MLP([d, 30, 10, n_output])
