@@ -48,6 +48,7 @@ class Mimic2(Dataset):
                                                      if 'worst' in name else 0,
                                                      self.x.columns))))
         if random_risk:
+            np.random.seed(42)
             r = np.random.permutation(self.r.data.numpy())            
             self.r = Variable(torch.from_numpy(r))
 

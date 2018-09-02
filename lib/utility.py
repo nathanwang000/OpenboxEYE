@@ -443,6 +443,26 @@ def loadData(dataname, get_test=False,
         Theta, val_theta,\
         ndim, n_islands
 
+def show_tensor_image(images_batch):
+    grid = utils.make_grid(images_batch)   
+    plt.imshow(convert_image_np(grid))
+    plt.gca().grid(False)
+    plt.show()
+
+def show_acc(net, loader, name=""):
+    net.eval()
+    correct = 0
+    total = 0
+
+    for data in loader:
+        x, y = data
+        x, y = to_var(x), to_var(y)
+        outputs = net(x)
+        _, predicted = torch.max(outputs.data, 1)
+        total += y.size(0)
+        correct += (predicted == y.data).sum()
+
+    print('Accuracy of the network on %d %s images: %d %%' % (len(loader.sampler), name, 100 * correct / total))
 # ---------------- for Openbox EYE ----------------
 def modelAP(model, data, risk):
     from lib.openbox import open_box_batch        
