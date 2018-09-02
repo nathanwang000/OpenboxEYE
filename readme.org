@@ -34,9 +34,10 @@ Hypothesis: In each polytope, the correlation structure is different, so that
 wlasso doesn't need to trade off between known variables? wridge is again not
 sparse as expected, but has a high enough AP due to a very high AUC selected,
 *this essentially means that with a lot of regions, wridge can conform to prior
-very closely and maintain auc by moving a few features up*.
+very closely and maintain auc by moving a few really important features up for
+each region*.
 
-note that for wlasso, smaller bias doesn't have high AP
+Note that for wlasso, smaller bias (set w=2 or w=1.5) doesn't have high AP
 #+BEGIN_EXAMPLE
   method name   alpha       auc        ap  min(rec, prec)  sparsity
 4   wlasso1_5    0.01  0.792525  0.218658        0.466667  0.170830
@@ -52,6 +53,10 @@ note that for wlasso, smaller bias doesn't have high AP
 3      wlasso    0.01  0.773726  0.302276        0.411215  0.282341
 2      wlasso     0.1  0.600917  0.406152        0.200717  0.976824
 #+END_EXAMPLE
+
+Furthermore, note that AP is just an approximation of credibility, to really
+measure the effect, we still need synthetic data (multiple convex groups, with
+each group sharing a line) and symKL.
 
 1: MLP([d, n_output]) # should be the same as LR
 
