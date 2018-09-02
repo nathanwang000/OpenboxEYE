@@ -17,4 +17,42 @@ use openbox and EYE to correct NN bias
 
 model archetectures tried
 
-0: MLP([d, 8, n_output]) 
+0: MLP([d, 8, n_output])  result in models0
+
+#+BEGIN_EXAMPLE
+          method name  alpha       auc        ap  min(rec, prec)  sparsity
+6            wlasso3*   0.01  0.817193  0.629766        0.449275  0.494893
+3            wridge3*    0.1  0.813998  0.775426        0.457143  0.121603
+1           eye_loss*   0.01  0.809619  0.645645        0.424460  0.315359
+2               enet*    0.1  0.778658  0.175591        0.405797  0.632015
+0    random_risk_eye*   0.01  0.770915  0.538056        0.370861  0.294015
+5              lasso*   0.01  0.766678  0.142867        0.359155  0.105053
+4  expert_only_ridge*  1e-05  0.722023  1.000000        0.324324  0.019875
+#+END_EXAMPLE
+
+Hypothesis: In each polytope, the correlation structure is different, so that
+wlasso doesn't need to trade off between known variables? wridge is again not
+sparse as expected, but has a high enough AP due to a very high AUC selected,
+*this essentially means that with a lot of regions, wridge can conform to prior
+very closely and maintain auc by moving a few features up*.
+
+note that for wlasso, smaller bias doesn't have high AP
+#+BEGIN_EXAMPLE
+  method name   alpha       auc        ap  min(rec, prec)  sparsity
+4   wlasso1_5    0.01  0.792525  0.218658        0.466667  0.170830
+2   wlasso1_5   1e-05  0.789593  0.155333        0.414414  0.047898
+3   wlasso1_5  0.0001  0.789176  0.120072        0.403846  0.044478
+1   wlasso1_5   0.001  0.787851  0.144042        0.439252  0.056265
+0   wlasso1_5     0.1  0.630254  0.468528        0.202740  0.900031
+
+  method name   alpha       auc        ap  min(rec, prec)  sparsity
+4      wlasso  0.0001  0.806993  0.145987        0.419048  0.047094
+0      wlasso   1e-05  0.778072  0.158706        0.410714  0.042646
+1      wlasso   0.001  0.775110  0.169379        0.409524  0.055125
+3      wlasso    0.01  0.773726  0.302276        0.411215  0.282341
+2      wlasso     0.1  0.600917  0.406152        0.200717  0.976824
+#+END_EXAMPLE
+
+1: MLP([d, n_output]) # should be the same as LR
+
+2: MLP([d, 30, 10, n_output])

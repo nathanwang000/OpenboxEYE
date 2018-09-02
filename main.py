@@ -69,7 +69,7 @@ def trainData(name, data, regularization=eye_loss, alpha=0.01, n_epochs=300,
     valdata = DataLoader(valdata, batch_size=4000, shuffle=True)
 
     n_output = 2 # binary classification task
-    model = MLP([d, 8, n_output]) 
+    model = MLP([d, n_output]) 
 
     t = Trainer(model, lr=learning_rate, risk_factors=m.r, alpha=alpha,
                 regularization=regularization,
