@@ -18,6 +18,8 @@ import os
 from sklearn.externals import joblib
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 from lib.settings import USE_GPU
+from torchvision import datasets, transforms, utils
+from src.utility import convert_image_np
 
 def to_cuda(x):
     if USE_GPU and torch.cuda.is_available():
@@ -111,7 +113,6 @@ def calcAP(ytrue, ypred):
     return average_precision_score(ytrue, np.abs(ypred))
     
 def plotAUC(m, model, valdata):
-    import matplotlib.pyplot as plt
     import seaborn as sns
     
     # m is a dataset in data.py
@@ -444,6 +445,7 @@ def loadData(dataname, get_test=False,
         ndim, n_islands
 
 def show_tensor_image(images_batch):
+    import matplotlib.pyplot as plt    
     grid = utils.make_grid(images_batch)   
     plt.imshow(convert_image_np(grid))
     plt.gca().grid(False)
