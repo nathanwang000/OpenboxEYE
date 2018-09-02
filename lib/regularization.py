@@ -12,6 +12,7 @@ def no_reg(loss, alpha=0, r=None): # placeholder with no regularization
     return ret
     
 def ridge(loss, alpha, r=None):
+
     def reg(x):
         return 0.5 * (x).dot(x)
 
@@ -24,6 +25,7 @@ def ridge(loss, alpha, r=None):
     return ret
 
 def wridge(loss, alpha, r, w=2):
+
     def reg(x):
         # nonlocal r # default to all unknown
         # r = r or Variable(torch.zeros(x.numel()), requires_grad=False)
@@ -51,6 +53,7 @@ def lasso(loss, alpha, r=None):
     return ret
 
 def wlasso(loss, alpha, r, w=2):
+
     def reg(x):
         # nonlocal r # default to all unknown
         # r = r or Variable(torch.zeros(x.numel()), requires_grad=False)
@@ -66,11 +69,12 @@ def wlasso(loss, alpha, r, w=2):
     return ret
 
 def owl(loss, alpha, r=None):
-    # the infinity norm formulation    
-    weight = Variable(torch.zeros(theta[1].numel()))
-    weight.data[-1] = 1 # because order is sorted ascending
 
     def reg(x):
+        # the infinity norm formulation    
+        weight = Variable(torch.zeros(x.numel()))
+        weight.data[-1] = 1 # because order is sorted ascending
+        
         order = torch.from_numpy(np.argsort(x.abs().data.numpy())).long()
         return (weight * x.abs()[order]).sum()
 
@@ -83,6 +87,7 @@ def owl(loss, alpha, r=None):
     return ret
 
 def enet(loss, alpha, r=None, l1_ratio=0.5):
+
     def reg(x): 
         return l1_ratio * torch.abs(x).sum() + (1-l1_ratio) * 0.5 * x.dot(x)
 
