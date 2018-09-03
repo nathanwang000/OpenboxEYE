@@ -10,7 +10,7 @@ def no_reg(loss, alpha=0, r=None): # placeholder with no regularization
         return loss(yhat, y)
 
     return ret
-    
+
 def ridge(loss, alpha, r=None):
 
     def reg(x):
@@ -115,3 +115,18 @@ def eye_loss(loss, alpha, r): # loss is the data loss
         return loss(yhat, y) + res / len(Ws) * alpha
     
     return ret
+
+def r4rr(loss, alpha, r): # right for the right reason
+
+    def reg(x):
+        l2sq = ((1-r) * x).dot((1-r) * x)
+        return l2sq
+
+    def ret(yhat, y, Ws):
+        res = 0
+        for W in Ws:
+            res += reg(W[1] - W[0])
+        return loss(yhat, y) + res / len(Ws) * alpha
+
+    return ret
+    

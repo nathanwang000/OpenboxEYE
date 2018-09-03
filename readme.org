@@ -15,9 +15,9 @@
 
 use openbox and EYE to correct NN bias
 
-model archetectures tried
+* model archetectures tried
 
-0: MLP([d, 8, n_output])  result in models0
+** 0: MLP([d, 8, n_output])  result in models0
 
 #+BEGIN_EXAMPLE
           method name  alpha       auc        ap  min(rec, prec)  sparsity
@@ -69,7 +69,7 @@ regular Ridge (on weight not on explanation) result
 0       ridge  0.0001  0.774291  0.162868        0.394231  0.044774
 #+END_EXAMPLE
 
-1: MLP([d, n_output]) # should be the same as LR
+** 1: MLP([d, n_output]) # should be the same as LR
 
 #+BEGIN_EXAMPLE
           method name  alpha       auc        ap  min(rec, prec)  sparsity
@@ -128,4 +128,19 @@ Using  original github code for credible learning
 
 Note that in this run, wridge3 is also selected.
 
-2: MLP([d, 30, 10, n_output])
+Just to be complete, we tried the same using Right For the Right Reason Penalty
+
+#+BEGIN_EXAMPLE
+  method name   alpha       auc        ap  min(rec, prec)  sparsity
+0        r4rr    0.01  0.847285  0.233464        0.490385  0.083969
+4        r4rr   1e-05  0.842239  0.113051        0.461538  0.061069
+5        r4rr   0.001  0.841599  0.108267        0.451923  0.038168
+1        r4rr  0.0001  0.839426  0.119637        0.451923  0.091603
+2        r4rr     0.1  0.831731  0.492209        0.490385  0.061069
+3       r4rr*  0.0001  0.793461  0.190609        0.434783  0.076336
+#+END_EXAMPLE
+
+Note that sparsity is again a concern for r4rr b/c it uses l2 on unknown
+variables.
+
+** 2: MLP([d, 30, 10, n_output])

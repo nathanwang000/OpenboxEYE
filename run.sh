@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # compare differnet regularizations
-for reg in {'[eye_loss]','[lasso]','[enet]','[ridge]','[wridge,wridge1_5,wridge3]','[wlasso,wlasso1_5,wlasso3]'} # exclude owl from the discussion
+for reg in {'[eye_loss]','[lasso]','[enet]','[ridge]', '[r4rr]', '[wridge,wridge3]','[wlasso,wlasso3]'} # exclude owl from the discussion
 do
     python main.py 'reg_exp' $reg
 done
