@@ -71,4 +71,61 @@ regular Ridge (on weight not on explanation) result
 
 1: MLP([d, n_output]) # should be the same as LR
 
+#+BEGIN_EXAMPLE
+          method name  alpha       auc        ap  min(rec, prec)  sparsity
+6               enet*   0.01  0.821766  0.142021        0.432624  0.641221
+4              lasso*   0.01  0.815823  0.133801        0.434783  0.755725
+3             wlasso*   0.01  0.809392  0.264835        0.421429  0.832061
+1           eye_loss*   0.01  0.807273  0.589520        0.428571  0.832061
+2            wridge3*    0.1  0.805710  0.654924        0.455172  0.083969
+5              ridge*  1e-05  0.795050  0.115704        0.414286  0.091603
+0    random_risk_eye*   0.01  0.785282  0.587215        0.422535  0.816794
+7  expert_only_ridge*    0.1  0.731623  1.000000        0.335714  0.000000
+#+END_EXAMPLE
+
+Suprisingly wridge3 has a very high AP (which is understandable to a certain
+extent). Upon further inspection, it's not that surprising (notice the low auc
+for the wridge with high ap)
+
+#+BEGIN_EXAMPLE
+  method name   alpha       auc        ap  min(rec, prec)  sparsity
+3     wridge3  0.0001  0.844904  0.123581        0.461538  0.045802
+0     wridge3    0.01  0.844814  0.389861        0.481481  0.068702
+4     wridge3   0.001  0.843638  0.148411        0.452830  0.045802
+1     wridge3   1e-05  0.842701  0.180381        0.451923  0.045802
+2     wridge3     0.1  0.805698  0.582893        0.471154  0.114504
+#+END_EXAMPLE
+
+the same thing hold true for wlasso as well
+
+#+BEGIN_SRC 
+  method name   alpha       auc        ap  min(rec, prec)  sparsity
+4     wlasso3   0.001  0.856960  0.222527        0.490385  0.503817
+2     wlasso3  0.0001  0.844978  0.127257        0.457143  0.091603
+0     wlasso3   1e-05  0.840587  0.104254        0.443396  0.053435
+1     wlasso3    0.01  0.797080  0.517899        0.423423  0.877863
+3     wlasso3     0.1  0.549759  0.142108        0.221239  0.022901
+#+END_SRC
+
+This time wlasso3 is not selected due to its way too low performance.
+Also to be noted is that for wlasso and wridge with w=2 or 1.5 doesn't exibit
+the above property: no one with high AP, that signals that they need high bias
+to get good result.
+
+Using  original github code for credible learning
+
+#+BEGIN_EXAMPLE
+          method name   alpha       auc        ap  min(rec, prec)  sparsity
+6              lasso*    0.01  0.819496  0.135070        0.442029  0.748092
+5             wlasso*    0.01  0.812830  0.325214        0.437500  0.816794
+2           eye_loss*    0.01  0.805726  0.645887        0.428571  0.801527
+4            wridge3*     0.1  0.805710  0.654617        0.455172  0.083969
+0                owl*  0.0001  0.795227  0.159654        0.413043  0.045802
+1    random_risk_eye*    0.01  0.787157  0.622977        0.427586  0.793893
+3               enet*     0.1  0.770865  0.121719        0.379310  0.893130
+7  expert_only_ridge*     0.1  0.751858  1.000000        0.381295  0.000000
+#+END_EXAMPLE
+
+Note that in this run, wridge3 is also selected.
+
 2: MLP([d, 30, 10, n_output])
