@@ -145,3 +145,17 @@ Note that sparsity is again a concern for r4rr b/c it uses l2 on unknown
 variables.
 
 ** 2: MLP([d, 30, 10, n_output])
+
+#+BEGIN_EXAMPLE
+ method name alpha       auc        ap  min(rec, prec)  sparsity
+2            wridge3*   0.1  0.829332  0.718033        0.479452  0.102649
+4            wlasso3*  0.01  0.827222  0.672437        0.475524  0.319832
+1               enet*   0.1  0.816596  0.190622        0.427536  0.402618
+5              lasso*   0.1  0.787392  0.160024        0.366906  0.536046
+7              ridge*  0.01  0.779650  0.161136        0.401274  0.047824
+0           eye_loss*   0.1  0.775514  0.982717        0.400000  0.855344
+6  expert_only_ridge*   0.1  0.758255  1.000000        0.373563  0.016500
+3    random_risk_eye*   0.1  0.745721  0.973519        0.363636  0.843366
+#+END_EXAMPLE   
+
+Currently overfit very much, try early stopping next run
