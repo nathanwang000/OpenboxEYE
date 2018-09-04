@@ -21,7 +21,7 @@ def generate_risk(nrgroups, nirgroups, pergroup, experiment):
         # vary percentage of known features in each group
         for i in range(0, nrvars//pergroup):
             r[(i*pergroup):(i*pergroup+i)] = 1
-        r = np.concatenate((r,r))
+        r = np.concatenate((r,r[:nirgroups * pergroup]))
     elif experiment == "corr":
         rbase = np.zeros(pergroup)
         rbase[:pergroup//2] = 1
@@ -29,14 +29,27 @@ def generate_risk(nrgroups, nirgroups, pergroup, experiment):
     return r
 
 ############## experiment 4.3.2 data generation ############
+def genCovData(C, theta, n=5000, noise=0.05, mu=0):
+    '''
+    C is the covariance matrice (assume to be psd)
+    noise: percentage to flip target
+    mu: the mean of X
+    '''
+    assert type(mu) is int or type(mu) is float, "don't support vector mean"
+    X = genCovX(C, n)
+    y = (X.dot(theta) > 0).reshape(n,1).astype(np.float32)
+    flip = np.random.randint(0, n, int(n * noise))
+    y[flip] = 1-y[flip]
+    return X.astype(np.float32) + mu, y.astype(np.float32)
+
 def sweepCov():
     nrgroups = 10
     nirgroups = 0
     pergroup = 30
     n = 5000
-    # setup                                                                                                                                                                        
+    # setup                                                            
     risk = generate_risk(nrgroups, nirgroups, pergroup, "corr")
-    # gen data                                                                                                                                                                     
+    # gen data                                              
     correlations = [i/nrgroups for i in range(nrgroups)]
     blocks = []
     for c in correlations:
@@ -46,7 +59,7 @@ def sweepCov():
     C = block_diag(*blocks)
     theta = np.ones(nrgroups*pergroup)
     datagen = lambda: genCovData(C=C, theta=theta,
-                                 n=n, signoise=5)
+                                 n=n, noise=0.05)
     return datagen, risk
 
 # example usage
@@ -56,13 +69,6 @@ X, y = d()
 '''
 
 ############## experiment 4.3.3 data generation ############
-def genCovData(C, theta, n=5000, signoise=5):
-    # C is the covariance matrice (assume to be psd)
-    noise = np.random.randn(n) * signoise
-    X = genCovX(C, n)
-    y = (X.dot(theta) + noise > 0).reshape(n,1)
-    return X.astype(np.float32), y.astype(np.float32).reshape(y.size,1) 
-
 def sweepBinaryR():
     nrgroups = 11
     nirgroups = nrgroups
@@ -77,7 +83,7 @@ def sweepBinaryR():
     theta = np.zeros((nrgroups + nirgroups) * pergroup)
     theta[:nrgroups*pergroup] = 1
     datagen = lambda: genCovData(C=C, theta=theta,
-                                 n=n, signoise=15)    
+                                 n=n, noise=0.05)    
     return datagen, risk
 
 # example usage
