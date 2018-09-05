@@ -82,3 +82,13 @@ def find_x(config, net, loader):
             W, b, C = open_box(net, im.view(-1))
             if C == config:
                 return im
+
+def find_all_x(config, net, loader):
+    cases = []
+    for x, y in loader:
+        for i, im in enumerate(x):
+            W, b, C = open_box(net, im.view(-1))
+            if C == config:
+                cases.append(im.unsqueeze(0))
+    return torch.cat(cases, 0)
+            
