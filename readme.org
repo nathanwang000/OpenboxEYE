@@ -144,6 +144,22 @@ Just to be complete, we tried the same using Right For the Right Reason Penalty
 Note that sparsity is again a concern for r4rr b/c it uses l2 on unknown
 variables.
 
+To verify that EYE in the linear case is indeed better than wlasso and wridge, I
+performed an experiment using duplicated features for both known and unknown
+variables.
+
+#+BEGIN_EXAMPLE
+  method name  alpha       auc        ap  min(recall, precision)  sparsity
+3    wlasso3*  0.001  0.819320  0.256559                0.434783  0.576336
+2      lasso*   0.01  0.817538  0.140888                0.434783  0.748092
+1   eye_loss*   0.01  0.812284  0.688439                0.434783  0.793893
+4    wridge3*    0.1  0.809114  0.542898                0.445205  0.068702
+0       enet*    0.1  0.769907  0.141020                0.382979  0.858779
+#+END_EXAMPLE
+
+Indeed wridge AP decreases due to its denseness for unknown feature. Quite
+conterintuitively, we don't observe the same pattern for nonlinear classifiers.
+
 ** 2: MLP([d, 30, 10, n_output])
 
 #+BEGIN_EXAMPLE
