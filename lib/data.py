@@ -10,7 +10,8 @@ from sklearn.preprocessing import StandardScaler
 
 class Mimic2(Dataset):
 
-    def __init__(self, mode='total', random_risk=False, expert_feature_only=False):
+    def __init__(self, mode='total', random_risk=False,
+                 expert_feature_only=False, duplicate=0):
         '''
         mode in [dead, survivor, total]: ways to impute missingness
         '''
@@ -21,17 +22,18 @@ class Mimic2(Dataset):
             self.x = self.x.ix[:,-16:]
         self.y = self.data['In-hospital_death']
 
-        self.xtr, self.xte, self.ytr, self.yte = train_test_split(self.x,
-                                                                  self.y,
-                                                                  test_size=0.25,
-                                                                  random_state=42,
-                                                                  stratify=self.y)
+        xtrain, self.xte, ytrain, self.yte = train_test_split(self.x,
+                                                              self.y,
+                                                              test_size=0.25,
+                                                              random_state=42,
+                                                              stratify=self.y)
 
-        self.xtrain,self.xval,self.ytrain,self.yval = train_test_split(self.xtr,
-                                                                       self.ytr,
+        self.xtrain,self.xval,self.ytrain,self.yval = train_test_split(xtrain,
+                                                                       ytrain,
                                                                        test_size=0.25,
                                                                        random_state=42,
-                                                                       stratify=self.ytr)
+                                                                       stratify=ytrain)
+
 
         # standardize model
         scaler = StandardScaler()
@@ -51,6 +53,13 @@ class Mimic2(Dataset):
             np.random.seed(42)
             r = np.random.permutation(self.r.data.numpy())            
             self.r = Variable(torch.from_numpy(r))
+
+        for i in range(duplicate):
+            self.xtrain = np.hstack([self.xtrain, self.xtrain])
+            self.xval = np.hstack([self.xval, self.xval])
+            self.xte = np.hstack([self.xte, self.xte])
+            self.r = torch.cat([self.r, self.r])
+                    
 
     def __len__(self):
         return len(self.data)

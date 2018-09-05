@@ -5,7 +5,7 @@ from lib.model import MLP
 from lib.train import Trainer, prepareData
 from lib.openbox import open_box
 from torch.utils.data import Dataset, DataLoader, TensorDataset
-from lib.regularization import eye_loss, wridge, wlasso, lasso, enet, owl, ridge, no_reg
+from lib.regularization import eye_loss, wridge, wlasso, lasso, enet, owl, ridge, no_reg, r4rr
 from sklearn.metrics import accuracy_score
 from lib.utility import get_y_yhat, model_auc, modelAP, sweepS1, modelSparsity, bootstrap
 import torch, os
@@ -69,7 +69,7 @@ def trainData(name, data, regularization=eye_loss, alpha=0.01, n_epochs=300,
     valdata = DataLoader(valdata, batch_size=4000, shuffle=True)
 
     n_output = 2 # binary classification task
-    model = MLP([d, n_output]) 
+    model = MLP([d, 8, n_output]) 
 
     t = Trainer(model, lr=learning_rate, risk_factors=m.r, alpha=alpha,
                 regularization=regularization,
@@ -162,6 +162,18 @@ def random_risk_exp(n_cpus=None, n_bootstrap=30):
 
 def reg_exp(regs, n_cpus=None, n_bootstrap=30):
     m = Mimic2(mode='total')
+    ps = ParamSearch(m, n_cpus)
+    
+    alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
+    for reg in regs:
+        for alpha in alphas:
+            name = reg.__name__ + '^' + str(alpha)
+            ps.add_param(name, reg, alpha)
+
+    ps.run(n_bootstrap)
+
+def duplicate_exp(regs, n_cpus=None, n_bootstrap=30):
+    m = Mimic2(mode='total', duplicate=1)
     ps = ParamSearch(m, n_cpus)
     
     alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
