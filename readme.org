@@ -160,6 +160,30 @@ variables.
 Indeed wridge AP decreases due to its denseness for unknown feature. Quite
 conterintuitively, we don't observe the same pattern for nonlinear classifiers.
 
+To verify advantage over two stage approach, we got the following result
+#+BEGIN_EXAMPLE
+             method name   alpha       auc        ap  min(recall, precision)  sparsity
+13              wlasso3*   0.001  0.819320  0.256559                0.434783  0.576336
+3                 lasso*    0.01  0.817538  0.140888                0.434783  0.748092
+2              eye_loss*    0.01  0.812284  0.688439                0.434783  0.793893
+14              wridge3*     0.1  0.809114  0.542898                0.445205  0.068702
+10  two_stage_ridge_0.7*     0.1  0.799153  0.309312                0.422819  0.071429
+12  two_stage_ridge_0.9*   0.001  0.798430  0.192545                0.428571  0.071429
+11  two_stage_ridge_0.8*  0.0001  0.788527  0.260471                0.413333  0.120482
+9   two_stage_ridge_0.6*  0.0001  0.782130  0.365384                0.401361  0.065574
+8   two_stage_ridge_0.5*   1e-05  0.780541  0.438777                0.424460  0.109091
+0                  enet*     0.1  0.769907  0.141020                0.382979  0.858779
+7   two_stage_ridge_0.4*   0.001  0.759373  0.541020                0.397163  0.104167
+6   two_stage_ridge_0.3*  0.0001  0.758978  0.504327                0.384058  0.130435
+1     expert_only_ridge*     0.1  0.751908  1.000000                0.372414  0.000000
+5   two_stage_ridge_0.2*   0.001  0.747991  0.663174                0.366906  0.081081
+4   two_stage_ridge_0.1*     0.1  0.730564  0.825059                0.359712  0.033333
+#+END_EXAMPLE
+
+Ignore the sparsity for two stage for a moment (the sparsity is calculated based
+on their own features not features, that's why they are so low), two stage
+approach with the same AP level as eye, performs much worse.
+
 ** 2: MLP([d, 30, 10, n_output])
 
 #+BEGIN_EXAMPLE
