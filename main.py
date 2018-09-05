@@ -197,6 +197,22 @@ def expert_feature_only_exp(n_cpus=None, n_bootstrap=30):
 
     ps.run(n_bootstrap)
 
+def two_stage_exp(threshold=0.90, n_cpus=None, n_bootstrap=30):
+    '''
+    remove features by setting a threshold on correlation, 
+    then apply l2 regularization on the remaining features
+    '''
+    m = Mimic2(mode='total', two_stage=True, threshold=float(threshold))
+    ps = ParamSearch(m, n_cpus)
+
+    reg = ridge
+    alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
+
+    for alpha in alphas:
+        name = 'two_stage_ridge_' + str(threshold) + '^' + str(alpha)
+        ps.add_param(name, reg, alpha)
+
+    ps.run(n_bootstrap)
     
 #####################################################
 def wridge1_5(*args, **kwargs):
