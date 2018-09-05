@@ -7,7 +7,7 @@ from lib.utility import to_np, to_var, check_nan, to_cuda, onehotize
 
 class MLP(nn.Module):
 
-    def __init__(self, neuron_sizes): # using relu activation
+    def __init__(self, neuron_sizes, activation=nn.LeakyReLU): 
         super(MLP, self).__init__()
         self.neuron_sizes = neuron_sizes
         
@@ -15,7 +15,7 @@ class MLP(nn.Module):
         for s0, s1 in zip(neuron_sizes[:-1], neuron_sizes[1:]):
             layers.extend([
                 nn.Linear(s0, s1),
-                nn.LeakyReLU(inplace=True)
+                activation()
             ])
         
         self.classifier = nn.Sequential(*layers[:-1])
