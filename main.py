@@ -172,14 +172,14 @@ def reg_exp(regs, n_cpus=None, n_bootstrap=30):
 
     ps.run(n_bootstrap)
 
-def duplicate_exp(regs, n_cpus=None, n_bootstrap=30):
-    m = Mimic2(mode='total', duplicate=1)
+def duplicate_exp(regs, duplicate=1, n_cpus=None, n_bootstrap=30):
+    m = Mimic2(mode='total', duplicate=duplicate)
     ps = ParamSearch(m, n_cpus)
     
     alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
     for reg in regs:
         for alpha in alphas:
-            name = reg.__name__ + '_dup_' + '^' + str(alpha)
+            name = reg.__name__ + '_dup' + str(duplicate) + '^' + str(alpha)
             ps.add_param(name, reg, alpha)
 
     ps.run(n_bootstrap)
