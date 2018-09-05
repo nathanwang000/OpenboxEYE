@@ -179,7 +179,7 @@ def duplicate_exp(regs, n_cpus=None, n_bootstrap=30):
     alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
     for reg in regs:
         for alpha in alphas:
-            name = reg.__name__ + '^' + str(alpha)
+            name = reg.__name__ + '_dup_' + '^' + str(alpha)
             ps.add_param(name, reg, alpha)
 
     ps.run(n_bootstrap)
