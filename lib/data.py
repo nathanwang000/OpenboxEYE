@@ -12,7 +12,7 @@ class Mimic2(Dataset):
 
     def __init__(self, mode='total', random_risk=False,
                  expert_feature_only=False, duplicate=0,
-                 two_stage=False, threshold=None):
+                 two_stage=False, threshold=None, noise=0.01):
         '''
         mode in [dead, survivor, total]: ways to impute missingness
         '''
@@ -63,9 +63,12 @@ class Mimic2(Dataset):
 
         # handle duplicate experiment
         for i in range(duplicate):
-            self.xtrain = np.hstack([self.xtrain, self.xtrain])
-            self.xval = np.hstack([self.xval, self.xval])
-            self.xte = np.hstack([self.xte, self.xte])
+            nxtrain = self.xtrain + noise * np.random.randn(*self.xtrain.shape)
+            nxval = self.xval + noise * np.random.randn(*self.xval.shape)
+            nxte = self.xte + noise * np.random.randn(*self.xte.shape)
+            self.xtrain = np.hstack([self.xtrain, nxtrain])
+            self.xval = np.hstack([self.xval, nxval])
+            self.xte = np.hstack([self.xte, nxte])
             self.r = torch.cat([self.r, self.r])
 
         # use training data to delete variables for two stage approach
