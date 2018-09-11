@@ -19,27 +19,39 @@ import argparse
 def parser():
     # todo
     parser = argparse.ArgumentParser(description='Use EYE to correct network mistakes given by Openbox')
-    # parser.add_argument('--batch-size', type=int, default=64, metavar='N',
-    #                     help='input batch size for training (default: 64)')
-    # parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
-    #                     help='input batch size for testing (default: 1000)')
-    # parser.add_argument('--epochs', type=int, default=10, metavar='N',
-    #                     help='number of epochs to train (default: 10)')
-    # parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
-    #                     help='learning rate (default: 0.01)')
+    parser.add_argument('function', type=str, metavar='f', nargs=1,
+                        help='function to evaluate')
+    parser.add_argument('regs', type=str, metavar='regs', nargs='?',
+                        help='regularization for function (optional)')
+    parser.add_argument('--batch_size', type=int, default=4000, metavar='N',
+                        help='input batch size for training (default: 4000)')
+    parser.add_argument('--n_cpus', type=int, default=None, metavar='n_cpu',
+                        help='number of cpus for training (default: None)')
+    parser.add_argument('--n_bootstrap', type=int, default=30, metavar='n_bootstrap',
+                        help='number of bootstrap samples for validation (default: 30)')
+    parser.add_argument('--epochs', type=int, default=300, metavar='N',
+                        help='number of epochs to train (default: 300)')
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+                        help='learning rate (default: 0.01)')
+    parser.add_argument('--dup', type=int, default=0, metavar='dup',
+                        help='duplicate features # times (default: 0)')
+    parser.add_argument('--noise', type=float, default=0.01, metavar='noise',
+                        help='noise level for duplicate (default: 0.01)')
+    parser.add_argument('--threshold', type=float, default=0.9, metavar='threshold',
+                        help='noise level for duplicate (default: 0.9)')
     # parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
     #                     help='SGD momentum (default: 0.5)')
     # parser.add_argument('--no-cuda', action='store_true', default=False,
     #                     help='disables CUDA training')
-    # parser.add_argument('--seed', type=int, default=1, metavar='S',
-    #                     help='random seed (default: 1)')
+    parser.add_argument('--seed', type=int, default=42, metavar='S',
+                        help='random seed (default: 42)')
     # parser.add_argument('--log-interval', type=int, default=10, metavar='N',
     #                     help='how many batches to wait before logging training status')
     args = parser.parse_args()
     return args
 
 def trainData(name, data, regularization=eye_loss, alpha=0.01, n_epochs=300, 
-              learning_rate=1e-3, batch_size=4000, r=None, test=False):
+              learning_rate=1e-3, batch_size=4000, test=False):
     '''
     return validation auc, average precision, score1
     if test is true, combine train and val and report on test performance
@@ -66,7 +78,7 @@ def trainData(name, data, regularization=eye_loss, alpha=0.01, n_epochs=300,
     data = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
     valdata = TensorDataset(*map(lambda x: x.data, prepareData(xval, yval)))
-    valdata = DataLoader(valdata, batch_size=4000, shuffle=True)
+    valdata = DataLoader(valdata, batch_size=batch_size, shuffle=True)
 
     n_output = 2 # binary classification task
     model = MLP([d, 8, n_output]) 
@@ -85,26 +97,23 @@ def trainData(name, data, regularization=eye_loss, alpha=0.01, n_epochs=300,
     return val_auc, ap, s1, sp
 
 class ParamSearch:
-    def __init__(self, data, n_cpus=None):
+    def __init__(self, data, p): # p is param parser
         self.tasks = []
         self.hyperparams = []
-        self.n_cpus = n_cpus
+        self.n_cpus = p.n_cpus
         self.data = data
         valdata = TensorDataset(*map(lambda x: x.data,
                                      prepareData(data.xval, data.yval)))
-        self.valdata = DataLoader(valdata, batch_size=4000, shuffle=True)    
+        self.valdata = DataLoader(valdata, batch_size=p.batch_size, shuffle=True)
+        self.p = p
         
     def add_param(self, name, reg, alpha):
         if not os.path.exists('models/' + name + '.pkl'):        
-            self.tasks.append((name, self.data, reg, alpha))
+            self.tasks.append((name, self.data, reg, alpha, p.epochs,
+                               p.lr, p.batch_size))
         self.hyperparams.append((name, reg, alpha))
 
     def run(self, n_bootstrap=100):
-        # print(self.tasks)
-        # n_, d_, r_, a_ = self.tasks[0]
-        # trainData(n_, d_, r_, 0.01)
-        # print('done training')
-
         #map_parallel(trainData, self.tasks, self.n_cpus)        
         for task in self.tasks:
             trainData(*task)
@@ -145,11 +154,11 @@ class ParamSearch:
         # retrian the chosen model
         name, reg, alpha = self.hyperparams[chosen]
         print('name', name)        
-        trainData(name, self.data, reg, alpha, test=True)
+        trainData(name, self.data, reg, alpha, p.epochs, p.lr, p.batch_size, test=True)
 
-def random_risk_exp(n_cpus=None, n_bootstrap=30):
-    m = Mimic2(mode='total', random_risk=True)
-    ps = ParamSearch(m, n_cpus)
+def random_risk_exp(p): # p is argparser
+    m = Mimic2(mode='total', random_risk=True, seed=p.seed)
+    ps = ParamSearch(m, p)
 
     reg = eye_loss    
     alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
@@ -158,36 +167,36 @@ def random_risk_exp(n_cpus=None, n_bootstrap=30):
         name = 'random_risk_eye' + '^' + str(alpha)
         ps.add_param(name, reg, alpha)
 
-    ps.run(n_bootstrap)
+    ps.run(p.n_bootstrap)
 
-def reg_exp(regs, n_cpus=None, n_bootstrap=30):
-    m = Mimic2(mode='total')
-    ps = ParamSearch(m, n_cpus)
+def reg_exp(p):
+    m = Mimic2(mode='total', seed=p.seed)
+    ps = ParamSearch(m, p)
     
     alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
-    for reg in regs:
+    for reg in p.regs:
         for alpha in alphas:
             name = reg.__name__ + '^' + str(alpha)
             ps.add_param(name, reg, alpha)
 
-    ps.run(n_bootstrap)
+    ps.run(p.n_bootstrap)
 
-def duplicate_exp(regs, duplicate=3, n_cpus=None, n_bootstrap=30, noise=0.01):
-    m = Mimic2(mode='total', duplicate=duplicate, noise=noise)
-    ps = ParamSearch(m, n_cpus)
+def duplicate_exp(p):
+    m = Mimic2(mode='total', duplicate=p.dup, noise=p.noise, seed=p.seed)
+    ps = ParamSearch(m, p)
     
     alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
-    for reg in regs:
+    for reg in p.regs:
         for alpha in alphas:
-            name = reg.__name__ + '_dup' + str(duplicate) + '_' + str(noise)\
+            name = reg.__name__ + '_dup' + str(p.dup) + '_' + str(p.noise)\
                    + '^' + str(alpha)
             ps.add_param(name, reg, alpha)
 
-    ps.run(n_bootstrap)
+    ps.run(p.n_bootstrap)
 
-def expert_feature_only_exp(n_cpus=None, n_bootstrap=30):    
-    m = Mimic2(mode='total', expert_feature_only=True)
-    ps = ParamSearch(m, n_cpus)
+def expert_feature_only_exp(p):    
+    m = Mimic2(mode='total', expert_feature_only=True, seed=p.seed)
+    ps = ParamSearch(m, p)
 
     reg = ridge
     alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
@@ -196,24 +205,32 @@ def expert_feature_only_exp(n_cpus=None, n_bootstrap=30):
         name = 'expert_only_ridge' + '^' + str(alpha)
         ps.add_param(name, reg, alpha)
 
-    ps.run(n_bootstrap)
+    ps.run(p.n_bootstrap)
 
-def two_stage_exp(threshold=0.90, n_cpus=None, n_bootstrap=30):
+def two_stage_exp(p):
     '''
     remove features by setting a threshold on correlation, 
     then apply l2 regularization on the remaining features
     '''
-    m = Mimic2(mode='total', two_stage=True, threshold=float(threshold))
-    ps = ParamSearch(m, n_cpus)
+    m = Mimic2(mode='total', two_stage=True, threshold=p.threshold, seed=p.seed)
+    ps = ParamSearch(m, p)
 
     reg = ridge
     alphas = [0.1, 0.01, 0.001, 0.0001, 0.00001]
 
     for alpha in alphas:
-        name = 'two_stage_ridge_' + str(threshold) + '^' + str(alpha)
+        name = 'two_stage_ridge_' + str(p.threshold) + '^' + str(alpha)
         ps.add_param(name, reg, alpha)
 
-    ps.run(n_bootstrap)
+    ps.run(p.n_bootstrap)
+
+def dummy(p):
+    '''
+    remove features by setting a threshold on correlation, 
+    then apply l2 regularization on the remaining features
+    '''
+    print('dummy run')
+    print(p.regs, p.n_cpus, p.n_bootstrap, p.batch_size, p.seed)
     
 #####################################################
 def wridge1_5(*args, **kwargs):
@@ -229,13 +246,12 @@ def wlasso3(*args, **kwargs):
     return wlasso(*args, **kwargs, w=3)
 
 if __name__ == '__main__':
+
     if len(sys.argv) < 2:
         print('please specify your function and argument to run')
     else:
-        print(sys.argv[1:])
-        f = eval(sys.argv[1])
-        if len(sys.argv) >= 3:
-            args = eval(sys.argv[2])
-            f(args)
-        else:
-            f()
+        p = parser()
+        print('running function', p.function[0])
+        f = eval(p.function[0])
+        f(p)
+

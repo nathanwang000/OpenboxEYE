@@ -12,7 +12,8 @@ class Mimic2(Dataset):
 
     def __init__(self, mode='total', random_risk=False,
                  expert_feature_only=False, duplicate=0,
-                 two_stage=False, threshold=None, noise=0.01):
+                 two_stage=False, threshold=None, noise=0.01,
+                 seed=42):
         '''
         mode in [dead, survivor, total]: ways to impute missingness
         '''
@@ -57,7 +58,7 @@ class Mimic2(Dataset):
                                                      if 'worst' in name else 0,
                                                      self.x.columns))))
         if random_risk:
-            np.random.seed(42)
+            np.random.seed(seed)
             r = np.random.permutation(self.r.data.numpy())            
             self.r = Variable(torch.from_numpy(r))
 
