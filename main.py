@@ -17,11 +17,10 @@ import sys
 import argparse
 
 def parser():
-    # todo
     parser = argparse.ArgumentParser(description='Use EYE to correct network mistakes given by Openbox')
     parser.add_argument('function', type=str, metavar='f', nargs=1,
                         help='function to evaluate')
-    parser.add_argument('regs', type=str, metavar='regs', nargs='?',
+    parser.add_argument('regs', type=str, metavar='regs', nargs='?', default='None',
                         help='regularization for function (optional)')
     parser.add_argument('--batch_size', type=int, default=4000, metavar='N',
                         help='input batch size for training (default: 4000)')
@@ -39,19 +38,19 @@ def parser():
                         help='noise level for duplicate (default: 0.01)')
     parser.add_argument('--threshold', type=float, default=0.9, metavar='threshold',
                         help='noise level for duplicate (default: 0.9)')
+    parser.add_argument('--seed', type=int, default=42, metavar='S',
+                        help='random seed (default: 42)')
+    parser.add_argument('--log_interval', type=int, default=1, metavar='log_interval',
+                        help='how many batches to wait before logging training status')
     # parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
     #                     help='SGD momentum (default: 0.5)')
     # parser.add_argument('--no-cuda', action='store_true', default=False,
     #                     help='disables CUDA training')
-    parser.add_argument('--seed', type=int, default=42, metavar='S',
-                        help='random seed (default: 42)')
-    # parser.add_argument('--log-interval', type=int, default=10, metavar='N',
-    #                     help='how many batches to wait before logging training status')
     args = parser.parse_args()
     return args
 
 def trainData(name, data, regularization=eye_loss, alpha=0.01, n_epochs=300, 
-              learning_rate=1e-3, batch_size=4000, test=False):
+              learning_rate=1e-3, batch_size=4000, log_interval=1, test=False):
     '''
     return validation auc, average precision, score1
     if test is true, combine train and val and report on test performance
@@ -81,13 +80,18 @@ def trainData(name, data, regularization=eye_loss, alpha=0.01, n_epochs=300,
     valdata = DataLoader(valdata, batch_size=batch_size, shuffle=True)
 
     n_output = 2 # binary classification task
-    model = MLP([d, 8, n_output]) 
+    model = MLP([d, 30, 10, n_output]) 
 
     t = Trainer(model, lr=learning_rate, risk_factors=m.r, alpha=alpha,
                 regularization=regularization,
                 name=name)
-    losses, vallosses = t.fit(data, n_epochs=n_epochs, print_every=1, valdata=valdata)
+    losses, vallosses = t.fit(data, n_epochs=n_epochs,
+                              print_every=log_interval,
+                              valdata=valdata)
 
+    # load model with lowest validation loss
+    model = torch.load('models/%s.pt' % name)
+    
     # report statistics: 
     val_auc = model_auc(model, valdata)
     ap = modelAP(model, valdata, m.r.data.numpy())
@@ -110,7 +114,7 @@ class ParamSearch:
     def add_param(self, name, reg, alpha):
         if not os.path.exists('models/' + name + '.pkl'):        
             self.tasks.append((name, self.data, reg, alpha, p.epochs,
-                               p.lr, p.batch_size))
+                               p.lr, p.batch_size, p.log_interval))
         self.hyperparams.append((name, reg, alpha))
 
     def run(self, n_bootstrap=100):
@@ -154,7 +158,8 @@ class ParamSearch:
         # retrian the chosen model
         name, reg, alpha = self.hyperparams[chosen]
         print('name', name)        
-        trainData(name, self.data, reg, alpha, p.epochs, p.lr, p.batch_size, test=True)
+        trainData(name, self.data, reg, alpha, p.epochs, p.lr, p.batch_size,
+                  p.log_interval, test=True)
 
 def random_risk_exp(p): # p is argparser
     m = Mimic2(mode='total', random_risk=True, seed=p.seed)
@@ -251,6 +256,8 @@ if __name__ == '__main__':
         print('please specify your function and argument to run')
     else:
         p = parser()
+        print(p.regs)
+        p.regs = eval(p.regs)
         print('running function', p.function[0])
         f = eval(p.function[0])
         f(p)

@@ -76,6 +76,7 @@ class Trainer(object):
         '''
         time_start = time.time()
         losses = []
+        best_valloss, best_valindex = np.inf, 0
         vallosses = []
         n = len(data.dataset)
         cost = 0 
@@ -99,15 +100,23 @@ class Trainer(object):
                                                            model_auc(self.model,
                                                                      data)))
                     if valdata is not None:
-                        vallosses.append(calc_loss(self.model, valdata, self.loss))
+                        valloss = calc_loss(self.model, valdata, self.loss)
+                        vallosses.append(valloss)
                         np.save('models/%s.valloss' % self.name, vallosses)   
                         to_print += " %.4f" % model_auc(self.model, valdata)
+
+                        if valloss <= best_valloss:
+                            best_valloss = valloss
+                            best_valindex = len(vallosses) - 1
+                            torch.save(self.model, 'models/%s.pt' % self.name)   
+                    else:
+                        torch.save(self.model, 'models/%s.pt' % self.name)
                         
                     print(to_print)
-                    torch.save(self.model, 'models/%s.pt' % self.name)
                     np.save('models/%s.loss' % self.name, losses)
 
                     cost = 0
+                    
         return losses, vallosses
 
     def fitXy(self, x, y, batch_size=100, n_epochs=10, print_every=10,
